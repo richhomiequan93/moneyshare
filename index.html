@@ -258,10 +258,10 @@
     <div class="form-section">付款人</div>
     <div class="payer-row">
       <button class="payer-btn me active" onclick="setPayer('me')">
-        <span class="dot me-c"></span>我付
+        <span class="dot me-c"></span>JJ付
       </button>
       <button class="payer-btn gf" onclick="setPayer('gf')">
-        <span class="dot gf-c"></span>女友付
+        <span class="dot gf-c"></span>VV付
       </button>
       <button class="payer-btn split" onclick="setPayer('split')">
         <span class="dot sp-c"></span>各付各半
@@ -275,8 +275,8 @@
 
   <div class="summary">
     <div class="sum-card"><div class="slabel">總花費 CNY</div><div class="sval" id="s-total">¥0</div></div>
-    <div class="sum-card"><div class="slabel">我付合計</div><div class="sval blue" id="s-me">¥0</div></div>
-    <div class="sum-card"><div class="slabel">女友付合計</div><div class="sval pink" id="s-gf">¥0</div></div>
+    <div class="sum-card"><div class="slabel">JJ付合計</div><div class="sval blue" id="s-me">¥0</div></div>
+    <div class="sum-card"><div class="slabel">VV付合計</div><div class="sval pink" id="s-gf">¥0</div></div>
     <div class="sum-card"><div class="slabel">差額 CNY</div><div class="sval" id="s-diff">±0</div></div>
   </div>
 
@@ -290,8 +290,8 @@
     </select>
     <select id="fil-payer" onchange="render()">
       <option value="">全部付款人</option>
-      <option value="me">我付</option>
-      <option value="gf">女友付</option>
+      <option value="me">JJ付</option>
+      <option value="gf">VV付</option>
       <option value="split">各付各半</option>
     </select>
     <select id="fil-cat" onchange="render()">
@@ -357,10 +357,10 @@
     <div class="form-section" style="margin-bottom:8px">付款人</div>
     <div class="payer-row" style="margin-bottom:4px">
       <button class="payer-btn me" id="ep-me" onclick="setEditPayer('me')">
-        <span class="dot me-c"></span>我付
+        <span class="dot me-c"></span>JJ付
       </button>
       <button class="payer-btn gf" id="ep-gf" onclick="setEditPayer('gf')">
-        <span class="dot gf-c"></span>女友付
+        <span class="dot gf-c"></span>VV付
       </button>
       <button class="payer-btn split" id="ep-split" onclick="setEditPayer('split')">
         <span class="dot sp-c"></span>各付各半
@@ -643,10 +643,10 @@ function render(){
   const bn = document.getElementById('banner');
   if(!entries.length){ bn.className='banner neutral'; bn.textContent='新增記帳後自動顯示結算結果'; }
   else if(Math.abs(diff)<0.01){ bn.className='banner even'; bn.textContent='兩人平手！不用找錢 '; }
-  else if(diff>0){ bn.className='banner gf-owes'; bn.textContent='女友需還你 ¥'+diff.toFixed(2)+' CNY'; }
-  else { bn.className='banner me-owes'; bn.textContent='你需還女友 ¥'+(-diff).toFixed(2)+' CNY'; }
+  else if(diff>0){ bn.className='banner gf-owes'; bn.textContent='VV還需給JJ ¥'+diff.toFixed(2)+' CNY'; }
+  else { bn.className='banner me-owes'; bn.textContent='JJ還需給VV ¥'+(-diff).toFixed(2)+' CNY'; }
 
-  const PL = {me:'我付',gf:'女友',split:'各半'};
+  const PL = {me:'JJ',gf:'VV',split:'各半'};
   const PC = {me:'#3b82f6',gf:'#ec4899',split:'#22c55e'};
 
   const list = document.getElementById('list');
@@ -675,7 +675,7 @@ function render(){
 
 function exportXLSX(){
   if(!entries.length){ alert('還沒有記帳紀錄！'); return; }
-  const PL = {me:'我付',gf:'女友付',split:'各付各半'};
+  const PL = {me:'JJ付',gf:'VV付',split:'各付各半'};
   const rows = entries
     .sort((a,b)=>a.day.localeCompare(b.day))
     .map(e=>({
@@ -686,19 +686,19 @@ function exportXLSX(){
       '日幣 JPY': Math.round(e.jpy),
       '人民幣 CNY': parseFloat(e.cny.toFixed(2)),
       '台幣 TWD': Math.round(e.twd),
-      '我付 CNY': parseFloat(e.mePay.toFixed(2)),
-      '女友付 CNY': parseFloat(e.gfPay.toFixed(2)),
-      '差額 CNY (我-她)': parseFloat((e.mePay-e.gfPay).toFixed(2))
+      'JJ付 CNY': parseFloat(e.mePay.toFixed(2)),
+      'VV付 CNY': parseFloat(e.gfPay.toFixed(2)),
+      '差額 CNY (JJ-VV)': parseFloat((e.mePay-e.gfPay).toFixed(2))
     }));
 
   const tot = entries.reduce((a,e)=>a+e.cny,0);
   const me  = entries.reduce((a,e)=>a+e.mePay,0);
   const gf  = entries.reduce((a,e)=>a+e.gfPay,0);
   const diff = me-gf;
-  const settle = Math.abs(diff)<0.01 ? '兩人平手' : diff>0 ? '女友需還你 ¥'+diff.toFixed(2)+' CNY' : '你需還女友 ¥'+(-diff).toFixed(2)+' CNY';
+  const settle = Math.abs(diff)<0.01 ? '兩人平手' : diff>0 ? 'VV還需給JJ ¥'+diff.toFixed(2)+' CNY' : 'JJ還需給VV ¥'+(-diff).toFixed(2)+' CNY';
 
   rows.push({});
-  rows.push({'天數':'合計','人民幣 CNY':parseFloat(tot.toFixed(2)),'我付 CNY':parseFloat(me.toFixed(2)),'女友付 CNY':parseFloat(gf.toFixed(2)),'差額 CNY (我-她)':parseFloat(diff.toFixed(2))});
+  rows.push({'天數':'合計','人民幣 CNY':parseFloat(tot.toFixed(2)),'JJ付 CNY':parseFloat(me.toFixed(2)),'VV付 CNY':parseFloat(gf.toFixed(2)),'差額 CNY (JJ-VV)':parseFloat(diff.toFixed(2))});
   rows.push({'天數':'結算','類別':settle});
 
   const ws = XLSX.utils.json_to_sheet(rows);
