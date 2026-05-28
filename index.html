@@ -93,10 +93,10 @@
   .export-btn:hover{opacity:0.8}
 
   /* Table header */
-  .tbl-header{display:grid;grid-template-columns:38px 52px 70px 1fr 62px 62px 62px 30px;gap:4px;padding:0 6px 6px;font-size:10px;color:#bbb;font-weight:600;letter-spacing:0.3px}
+  .tbl-header{display:grid;grid-template-columns:38px 52px 70px 1fr 62px 62px 62px 52px;gap:4px;padding:0 6px 6px;font-size:10px;color:#bbb;font-weight:600;letter-spacing:0.3px}
 
   /* Entry rows */
-  .entry{display:grid;grid-template-columns:38px 52px 70px 1fr 62px 62px 62px 30px;gap:4px;align-items:center;padding:8px 6px;border-radius:9px;margin-bottom:4px;border:1px solid #ebebeb;background:#fff;font-size:12px;transition:border-color 0.1s}
+  .entry{display:grid;grid-template-columns:38px 52px 70px 1fr 62px 62px 62px 52px;gap:4px;align-items:center;padding:8px 6px;border-radius:9px;margin-bottom:4px;border:1px solid #ebebeb;background:#fff;font-size:12px;transition:border-color 0.1s}
   .entry:hover{border-color:#d0d0d0}
   .day-pill{font-size:10px;font-weight:600;padding:2px 5px;border-radius:5px;text-align:center;background:#f0f0f0;color:#666}
   .cat-pill{font-size:10px;padding:2px 6px;border-radius:5px;text-align:center;white-space:nowrap}
@@ -105,8 +105,22 @@
   .num{text-align:right;color:#666;font-variant-numeric:tabular-nums;font-size:11px}
   .del{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:2px;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:color 0.1s;font-family:inherit}
   .del:hover{color:#ef4444}
+  .edit-btn{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:2px;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:color 0.1s;font-family:inherit}
+  .edit-btn:hover{color:#4a7eff}
+  .row-actions{display:flex;align-items:center;gap:2px}
   .empty{text-align:center;padding:2.5rem 1rem;color:#bbb;font-size:13px}
   .empty i{font-size:28px;display:block;margin-bottom:8px}
+
+  /* Edit modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;padding:1rem}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:1.25rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+  .modal-title{font-size:15px;font-weight:600;margin-bottom:1rem;color:#1a1a1a}
+  .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+  .modal-cancel{padding:10px;border:1px solid #e0e0e0;border-radius:9px;background:#fafafa;font-size:14px;font-weight:500;cursor:pointer;color:#555;font-family:inherit}
+  .modal-save{padding:10px;border:none;border-radius:9px;background:#1a1a1a;font-size:14px;font-weight:500;cursor:pointer;color:#fff;font-family:inherit}
+  .modal-cancel:hover{background:#f0f0f0}
+  .modal-save:hover{opacity:0.85}
 
   @media(max-width:560px){
     body{padding:0.6rem}
@@ -142,7 +156,7 @@
       grid-template-columns:auto auto 1fr auto;
       grid-template-rows:auto auto;
       grid-template-areas:
-        "day cat payer del"
+        "day cat payer actions"
         ". item item cny";
       gap:5px 8px;
       padding:10px 12px;
@@ -152,7 +166,7 @@
     .payer-info{grid-area:payer;align-self:center;font-size:12px}
     .e-item{grid-area:item;font-size:13px}
     .e-cny{grid-area:cny;text-align:right;font-size:13px;font-weight:600;align-self:end}
-    .del{grid-area:del;align-self:center}
+    .row-actions{grid-area:actions;align-self:center}
     .e-jpy,.e-twd{display:none}
 
     /* 篩選列 */
@@ -296,6 +310,67 @@
     <div></div>
   </div>
   <div id="list"></div>
+</div>
+
+<!-- 編輯 Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">編輯記帳</div>
+    <div class="form-row cols-3" style="margin-bottom:12px">
+      <div class="field">
+        <label>天數</label>
+        <select id="e-day">
+          <option>Day 1</option><option>Day 2</option><option>Day 3</option>
+          <option>Day 4</option><option>Day 5</option><option>Day 6</option><option>Day 7</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>類別</label>
+        <select id="e-cat">
+          <option>機票</option><option>住宿</option><option>租車</option>
+          <option>景點</option><option>餐飲</option><option>購物</option><option>交通</option><option>其他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>項目描述</label>
+        <input type="text" id="e-item" placeholder="例：美麗海水族館">
+      </div>
+    </div>
+    <div class="form-section" style="margin-bottom:8px">金額</div>
+    <div class="amt-grid" style="margin-bottom:12px">
+      <div class="amt-box jpy">
+        <label>日幣 JPY</label>
+        <span class="tag">¥</span>
+        <input type="number" id="e-jpy" placeholder="0" min="0">
+      </div>
+      <div class="amt-box cny">
+        <label>人民幣 CNY</label>
+        <span class="tag">¥</span>
+        <input type="number" id="e-cny" placeholder="0" min="0">
+      </div>
+      <div class="amt-box twd">
+        <label>台幣 TWD</label>
+        <span class="tag">NT</span>
+        <input type="number" id="e-twd" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="form-section" style="margin-bottom:8px">付款人</div>
+    <div class="payer-row" style="margin-bottom:4px">
+      <button class="payer-btn me" id="ep-me" onclick="setEditPayer('me')">
+        <span class="dot me-c"></span>我付
+      </button>
+      <button class="payer-btn gf" id="ep-gf" onclick="setEditPayer('gf')">
+        <span class="dot gf-c"></span>女友付
+      </button>
+      <button class="payer-btn split" id="ep-split" onclick="setEditPayer('split')">
+        <span class="dot sp-c"></span>各付各半
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEditModal()">取消</button>
+      <button class="modal-save" onclick="saveEdit()">儲存</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -453,6 +528,73 @@ async function addEntry(){
   ['f-jpy','f-cny','f-twd','f-item'].forEach(id=>document.getElementById(id).value='');
 }
 
+let editingId = null;
+let editPayer = 'me';
+
+function openEditModal(id) {
+  const e = entries.find(e => String(e.id) === String(id));
+  if (!e) return;
+  editingId = id;
+  document.getElementById('e-day').value = e.day;
+  document.getElementById('e-cat').value = e.cat;
+  document.getElementById('e-item').value = e.item;
+  document.getElementById('e-jpy').value = e.jpy ? Math.round(e.jpy) : '';
+  document.getElementById('e-cny').value = e.cny ? e.cny.toFixed(2) : '';
+  document.getElementById('e-twd').value = e.twd ? Math.round(e.twd) : '';
+  setEditPayer(e.payer);
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingId = null;
+}
+
+function setEditPayer(p) {
+  editPayer = p;
+  ['me','gf','split'].forEach(k => {
+    const btn = document.getElementById('ep-' + k);
+    btn.classList.toggle('active', k === p);
+  });
+}
+
+async function saveEdit() {
+  const day  = document.getElementById('e-day').value;
+  const cat  = document.getElementById('e-cat').value;
+  const item = document.getElementById('e-item').value.trim() || cat;
+  const jpy  = parseFloat(document.getElementById('e-jpy').value) || 0;
+  const cny  = parseFloat(document.getElementById('e-cny').value) || 0;
+  const twd  = parseFloat(document.getElementById('e-twd').value) || 0;
+  if (!jpy && !cny && !twd) { alert('請填入金額'); return; }
+
+  const rjc = r('r-jpy-cny'), rjt = r('r-jpy-twd'), rct = r('r-cny-twd');
+  const fCny = cny || (jpy * rjc) || (rct ? (twd / rct) : 0);
+  const fJpy = jpy || (rjc ? (cny / rjc) : 0) || (rjt ? (twd / rjt) : 0);
+  const fTwd = twd || (jpy * rjt) || (cny * rct);
+
+  let mePay = 0, gfPay = 0;
+  if (editPayer === 'me') mePay = fCny;
+  else if (editPayer === 'gf') gfPay = fCny;
+  else { mePay = fCny / 2; gfPay = fCny / 2; }
+
+  const updated = { day, cat, item, jpy: fJpy, cny: fCny, twd: fTwd, payer: editPayer, mePay, gfPay };
+
+  if (entriesRef && isConnected) {
+    try {
+      await entriesRef.doc(editingId).update(updated);
+    } catch(e) {
+      console.error(e);
+      alert('儲存失敗');
+      return;
+    }
+  } else {
+    const idx = entries.findIndex(e => String(e.id) === String(editingId));
+    if (idx !== -1) entries[idx] = { ...entries[idx], ...updated };
+    saveLocal(); render();
+  }
+  closeEditModal();
+}
+
 async function deleteEntry(id){
   if(entriesRef && isConnected) {
     try {
@@ -523,7 +665,10 @@ function render(){
       <div class="num e-jpy">¥${Math.round(e.jpy).toLocaleString()}</div>
       <div class="num e-cny" style="color:#333;font-weight:500">¥${e.cny.toFixed(2)}</div>
       <div class="num e-twd">NT${Math.round(e.twd).toLocaleString()}</div>
-      <button class="del" onclick="deleteEntry('${e.id}')" aria-label="刪除"><i class="ti ti-x"></i></button>
+      <div class="row-actions">
+        <button class="edit-btn" onclick="openEditModal('${e.id}')" aria-label="編輯"><i class="ti ti-pencil"></i></button>
+        <button class="del" onclick="deleteEntry('${e.id}')" aria-label="刪除"><i class="ti ti-x"></i></button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -581,6 +726,10 @@ function exportXLSX(){
     var src = id.replace('f-','');
     calcFrom(src);
   });
+});
+
+document.getElementById('edit-modal').addEventListener('click', function(e){
+  if (e.target === this) closeEditModal();
 });
 
 initFirebase();
