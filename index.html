@@ -12,6 +12,18 @@
   h1{font-size:20px;font-weight:600;margin-bottom:4px;color:#1a1a1a}
   .subtitle{font-size:13px;color:#888;margin-bottom:1.5rem}
 
+  /* Config notice */
+  .config-notice{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:1.25rem;font-size:12px;color:#92400e;line-height:1.6}
+  .config-notice strong{font-weight:600}
+  .config-notice code{background:#fef3c7;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11px}
+
+  /* Sync status */
+  .sync-bar{display:flex;align-items:center;gap:6px;font-size:11px;color:#888;margin-bottom:1rem}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:#d1d5db;flex-shrink:0}
+  .sync-dot.connected{background:#22c55e}
+  .sync-dot.syncing{background:#f59e0b;animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
   /* Rates */
   .rates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem}
   .rate-card{background:#fff;border-radius:10px;padding:10px 12px;border:1px solid #e8e8e8}
@@ -55,6 +67,7 @@
   .add-btn{width:100%;padding:10px;background:#1a1a1a;border:none;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:opacity 0.15s}
   .add-btn:hover{opacity:0.85}
   .add-btn:active{transform:scale(0.99)}
+  .add-btn:disabled{opacity:0.4;cursor:not-allowed}
 
   /* Summary */
   .summary{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px}
@@ -105,11 +118,24 @@
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="container">
   <h1>沖繩旅遊記帳本 ✈</h1>
   <p class="subtitle">填任一金額自動換算 · 記錄誰付款 · 自動結算</p>
+
+  <!-- 設定提示（Firebase 設定完成後可移除） -->
+  <div class="config-notice" id="config-notice" style="display:none">
+    ⚠️ <strong>尚未設定 Firebase</strong> — 請在程式碼頂端的 <code>firebaseConfig</code> 填入你的專案資訊，資料才能跨裝置同步。
+  </div>
+
+  <div class="sync-bar">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-label">連線中...</span>
+  </div>
 
   <div class="rates">
     <div class="rate-card">
@@ -181,7 +207,7 @@
       </button>
     </div>
 
-    <button class="add-btn" onclick="addEntry()">
+    <button class="add-btn" id="add-btn" onclick="addEntry()">
       <i class="ti ti-plus"></i> 加入記帳
     </button>
   </div>
@@ -226,9 +252,26 @@
 </div>
 
 <script>
+// ============================================================
+// ★ 請在這裡填入你的 Firebase 設定 ★
+// 從 Firebase 主控台 → 專案設定 → 你的應用程式 → 複製貼上
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAKxyZ66VbRU4pPhY0GkeYZzr7i1gD8PYE",
+  authDomain: "sharemoneyapp-9e4c1.firebaseapp.com",
+  projectId: "sharemoneyapp-9e4c1",
+  storageBucket: "sharemoneyapp-9e4c1.firebasestorage.app",
+  messagingSenderId: "990246591550",
+  appId: "1:990246591550:web:58a54441b345ebb198056f",
+  measurementId: "G-HTL6LPP872"
+};
+// ============================================================
+
 let entries = [];
 let payer = 'me';
 let computing = false;
+let entriesRef = null;
+let isConnected = false;
 
 const CAT = {
   '機票':['#dbeafe','#1e40af'],'住宿':['#d1fae5','#065f46'],
@@ -236,6 +279,54 @@ const CAT = {
   '餐飲':['#fef9c3','#713f12'],'購物':['#fce7f3','#831843'],
   '交通':['#dcfce7','#14532d'],'其他':['#f1f5f9','#475569']
 };
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (status === 'connected') {
+    dot.className = 'sync-dot connected';
+    label.textContent = '已同步 · 跨裝置即時更新';
+  } else if (status === 'syncing') {
+    dot.className = 'sync-dot syncing';
+    label.textContent = '同步中...';
+  } else {
+    dot.className = 'sync-dot';
+    label.textContent = '未連線 · 使用本機暫存';
+  }
+}
+
+function initFirebase() {
+  if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
+    document.getElementById('config-notice').style.display = 'block';
+    setSyncStatus('offline');
+    loadLocal(); render();
+    return;
+  }
+  try {
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    entriesRef = db.collection('trips').doc('okinawa2025').collection('entries');
+
+    setSyncStatus('syncing');
+    entriesRef.orderBy('timestamp').onSnapshot(
+      snapshot => {
+        entries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        isConnected = true;
+        setSyncStatus('connected');
+        render();
+      },
+      err => {
+        console.error('Firestore error:', err);
+        setSyncStatus('offline');
+        loadLocal(); render();
+      }
+    );
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    setSyncStatus('offline');
+    loadLocal(); render();
+  }
+}
 
 function r(id){ return parseFloat(document.getElementById(id).value)||0; }
 
@@ -274,7 +365,7 @@ function setPayer(p){
   });
 }
 
-function addEntry(){
+async function addEntry(){
   const day  = document.getElementById('f-day').value;
   const cat  = document.getElementById('f-cat').value;
   const item = document.getElementById('f-item').value.trim() || cat;
@@ -293,21 +384,47 @@ function addEntry(){
   else if(payer==='gf') gfPay=fCny;
   else { mePay=fCny/2; gfPay=fCny/2; }
 
-  entries.push({id:Date.now(), day, cat, item, jpy:fJpy, cny:fCny, twd:fTwd, payer, mePay, gfPay});
+  const entry = { day, cat, item, jpy:fJpy, cny:fCny, twd:fTwd, payer, mePay, gfPay };
+
+  if(entriesRef && isConnected) {
+    const btn = document.getElementById('add-btn');
+    btn.disabled = true;
+    try {
+      await entriesRef.add({ ...entry, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+    } catch(e) {
+      console.error(e);
+      alert('儲存失敗，請檢查網路連線');
+    } finally {
+      btn.disabled = false;
+    }
+  } else {
+    entry.id = Date.now();
+    entries.push(entry);
+    saveLocal(); render();
+  }
+
   ['f-jpy','f-cny','f-twd','f-item'].forEach(id=>document.getElementById(id).value='');
-  save(); render();
 }
 
-function deleteEntry(id){
-  entries = entries.filter(e=>e.id!==id);
-  save(); render();
+async function deleteEntry(id){
+  if(entriesRef && isConnected) {
+    try {
+      await entriesRef.doc(id).delete();
+    } catch(e) {
+      console.error(e);
+      alert('刪除失敗');
+    }
+  } else {
+    entries = entries.filter(e=>String(e.id)!==String(id));
+    saveLocal(); render();
+  }
 }
 
-function save(){
+function saveLocal(){
   try{ localStorage.setItem('okinawa_entries', JSON.stringify(entries)); }catch(e){}
 }
 
-function load(){
+function loadLocal(){
   try{
     const d = localStorage.getItem('okinawa_entries');
     if(d) entries = JSON.parse(d);
@@ -351,7 +468,6 @@ function render(){
 
   list.innerHTML = [...filtered].sort((a,b)=>a.day.localeCompare(b.day)).map(e=>{
     const [bg,tc] = CAT[e.cat]||CAT['其他'];
-    const split = e.payer==='split'?'各¥'+e.mePay.toFixed(2):(e.payer==='me'?'我¥'+e.mePay.toFixed(2):'她¥'+e.gfPay.toFixed(2));
     return `<div class="entry">
       <div class="day-pill">${e.day.replace('Day ','D')}</div>
       <div><span class="cat-pill" style="background:${bg};color:${tc}">${e.cat}</span></div>
@@ -360,11 +476,10 @@ function render(){
       <div class="num e-jpy">¥${Math.round(e.jpy).toLocaleString()}</div>
       <div class="num" style="color:#333;font-weight:500">¥${e.cny.toFixed(2)}</div>
       <div class="num e-twd">NT${Math.round(e.twd).toLocaleString()}</div>
-      <button class="del" onclick="deleteEntry(${e.id})" aria-label="刪除"><i class="ti ti-x"></i></button>
+      <button class="del" onclick="deleteEntry('${e.id}')" aria-label="刪除"><i class="ti ti-x"></i></button>
     </div>`;
   }).join('');
 }
-
 
 function exportXLSX(){
   if(!entries.length){ alert('還沒有記帳紀錄！'); return; }
@@ -421,7 +536,7 @@ function exportXLSX(){
   });
 });
 
-load(); render();
+initFirebase();
 </script>
 </body>
 </html>
