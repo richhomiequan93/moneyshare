@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沖繩旅遊記帳本</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;padding:1rem}
+  .container{max-width:720px;margin:0 auto}
+  h1{font-size:20px;font-weight:600;margin-bottom:4px;color:#1a1a1a}
+  .subtitle{font-size:13px;color:#888;margin-bottom:1.5rem}
+
+  /* Rates */
+  .rates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem}
+  .rate-card{background:#fff;border-radius:10px;padding:10px 12px;border:1px solid #e8e8e8}
+  .rate-card label{font-size:10px;color:#999;display:block;margin-bottom:4px;letter-spacing:0.3px}
+  .rate-card input{width:100%;border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:13px;font-weight:600;text-align:center;color:#1a1a1a;background:#fafafa}
+  .rate-card input:focus{outline:none;border-color:#4a7eff;background:#fff}
+
+  /* Add form */
+  .add-form{background:#fff;border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e8e8e8}
+  .form-section{font-size:11px;font-weight:600;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px}
+  .form-row{display:grid;gap:8px;margin-bottom:12px}
+  .form-row.cols-3{grid-template-columns:1fr 1fr 1fr}
+  .form-row.cols-2{grid-template-columns:1fr 1fr}
+  .field label{font-size:11px;color:#888;display:block;margin-bottom:3px}
+  .field input,.field select{width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:7px 10px;font-size:13px;color:#1a1a1a;background:#fafafa;-webkit-appearance:none}
+  .field input:focus,.field select:focus{outline:none;border-color:#4a7eff;background:#fff}
+
+  /* Amount inputs */
+  .amt-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+  .amt-box{position:relative}
+  .amt-box label{font-size:11px;color:#888;display:block;margin-bottom:3px}
+  .amt-box .tag{position:absolute;left:9px;bottom:8px;font-size:11px;color:#bbb;font-weight:600}
+  .amt-box input{width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 8px 7px 30px;font-size:14px;color:#1a1a1a;background:#fafafa;font-weight:500}
+  .amt-box input:focus{outline:none;border-color:#4a7eff;background:#fff;box-shadow:0 0 0 3px rgba(74,126,255,0.08)}
+  .amt-box.jpy input:focus{border-color:#f59e0b}
+  .amt-box.cny input:focus{border-color:#ef4444}
+  .amt-box.twd input:focus{border-color:#10b981}
+
+  /* Payer buttons */
+  .payer-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+  .payer-btn{padding:9px 8px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fafafa;font-size:13px;cursor:pointer;color:#888;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
+  .payer-btn .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .payer-btn.me.active{background:#eff6ff;border-color:#3b82f6;color:#1d4ed8;font-weight:500}
+  .payer-btn.gf.active{background:#fdf2f8;border-color:#ec4899;color:#9d174d;font-weight:500}
+  .payer-btn.split.active{background:#f0fdf4;border-color:#22c55e;color:#15803d;font-weight:500}
+  .payer-btn .dot.me-c{background:#3b82f6}
+  .payer-btn .dot.gf-c{background:#ec4899}
+  .payer-btn .dot.sp-c{background:#22c55e}
+
+  /* Add button */
+  .add-btn{width:100%;padding:10px;background:#1a1a1a;border:none;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:opacity 0.15s}
+  .add-btn:hover{opacity:0.85}
+  .add-btn:active{transform:scale(0.99)}
+
+  /* Summary */
+  .summary{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+  .sum-card{background:#fff;border-radius:10px;padding:12px;border:1px solid #e8e8e8;text-align:center}
+  .sum-card .slabel{font-size:10px;color:#aaa;margin-bottom:5px;letter-spacing:0.2px}
+  .sum-card .sval{font-size:16px;font-weight:600;color:#1a1a1a}
+  .sum-card .sval.blue{color:#1d4ed8}
+  .sum-card .sval.pink{color:#9d174d}
+  .sum-card .sval.green{color:#15803d}
+  .sum-card .sval.red{color:#b91c1c}
+
+  /* Settle banner */
+  .banner{border-radius:10px;padding:11px 16px;font-size:13px;font-weight:500;text-align:center;margin-bottom:1.25rem}
+  .banner.neutral{background:#f5f5f0;color:#888}
+  .banner.gf-owes{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+  .banner.me-owes{background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3}
+  .banner.even{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+
+  /* Filters */
+  .filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .filters select{border:1px solid #e0e0e0;border-radius:7px;padding:5px 10px;font-size:12px;background:#fff;color:#555;font-family:inherit;-webkit-appearance:none}
+  .export-btn{margin-left:auto;padding:5px 14px;border:1px solid #1a1a1a;border-radius:7px;background:#1a1a1a;color:#fff;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit;white-space:nowrap}
+  .export-btn:hover{opacity:0.8}
+
+  /* Table header */
+  .tbl-header{display:grid;grid-template-columns:38px 52px 70px 1fr 62px 62px 62px 30px;gap:4px;padding:0 6px 6px;font-size:10px;color:#bbb;font-weight:600;letter-spacing:0.3px}
+
+  /* Entry rows */
+  .entry{display:grid;grid-template-columns:38px 52px 70px 1fr 62px 62px 62px 30px;gap:4px;align-items:center;padding:8px 6px;border-radius:9px;margin-bottom:4px;border:1px solid #ebebeb;background:#fff;font-size:12px;transition:border-color 0.1s}
+  .entry:hover{border-color:#d0d0d0}
+  .day-pill{font-size:10px;font-weight:600;padding:2px 5px;border-radius:5px;text-align:center;background:#f0f0f0;color:#666}
+  .cat-pill{font-size:10px;padding:2px 6px;border-radius:5px;text-align:center;white-space:nowrap}
+  .payer-info{display:flex;align-items:center;gap:4px;font-size:11px}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .num{text-align:right;color:#666;font-variant-numeric:tabular-nums;font-size:11px}
+  .del{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:2px;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:color 0.1s;font-family:inherit}
+  .del:hover{color:#ef4444}
+  .empty{text-align:center;padding:2.5rem 1rem;color:#bbb;font-size:13px}
+  .empty i{font-size:28px;display:block;margin-bottom:8px}
+
+  @media(max-width:500px){
+    .summary{grid-template-columns:1fr 1fr}
+    .form-row.cols-3{grid-template-columns:1fr}
+    .amt-grid{grid-template-columns:1fr}
+    .tbl-header,.entry{grid-template-columns:32px 44px 60px 1fr 50px 30px}
+    .tbl-header .h-jpy,.entry .e-jpy,
+    .tbl-header .h-twd,.entry .e-twd{display:none}
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <h1>沖繩旅遊記帳本 ✈</h1>
+  <p class="subtitle">填任一金額自動換算 · 記錄誰付款 · 自動結算</p>
+
+  <div class="rates">
+    <div class="rate-card">
+      <label>1 JPY = ? CNY</label>
+      <input type="number" id="r-jpy-cny" value="0.0467" step="0.0001" onchange="onRateChange()">
+    </div>
+    <div class="rate-card">
+      <label>1 JPY = ? TWD</label>
+      <input type="number" id="r-jpy-twd" value="0.213" step="0.001" onchange="onRateChange()">
+    </div>
+    <div class="rate-card">
+      <label>1 CNY = ? TWD</label>
+      <input type="number" id="r-cny-twd" value="4.56" step="0.01" onchange="onRateChange()">
+    </div>
+  </div>
+
+  <div class="add-form">
+    <div class="form-section">新增記帳</div>
+    <div class="form-row cols-3">
+      <div class="field">
+        <label>天數</label>
+        <select id="f-day">
+          <option>Day 1</option><option>Day 2</option><option>Day 3</option>
+          <option>Day 4</option><option>Day 5</option><option>Day 6</option><option>Day 7</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>類別</label>
+        <select id="f-cat">
+          <option>機票</option><option>住宿</option><option>租車</option>
+          <option>景點</option><option>餐飲</option><option>購物</option><option>交通</option><option>其他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>項目描述</label>
+        <input type="text" id="f-item" placeholder="例：美麗海水族館">
+      </div>
+    </div>
+
+    <div class="form-section">金額（填其中一個，自動換算）</div>
+    <div class="amt-grid">
+      <div class="amt-box jpy">
+        <label>日幣 JPY</label>
+        <span class="tag">¥</span>
+        <input type="number" id="f-jpy" placeholder="0" min="0">
+      </div>
+      <div class="amt-box cny">
+        <label>人民幣 CNY</label>
+        <span class="tag">¥</span>
+        <input type="number" id="f-cny" placeholder="0" min="0">
+      </div>
+      <div class="amt-box twd">
+        <label>台幣 TWD</label>
+        <span class="tag">NT</span>
+        <input type="number" id="f-twd" placeholder="0" min="0">
+      </div>
+    </div>
+
+    <div class="form-section">付款人</div>
+    <div class="payer-row">
+      <button class="payer-btn me active" onclick="setPayer('me')">
+        <span class="dot me-c"></span>我付
+      </button>
+      <button class="payer-btn gf" onclick="setPayer('gf')">
+        <span class="dot gf-c"></span>女友付
+      </button>
+      <button class="payer-btn split" onclick="setPayer('split')">
+        <span class="dot sp-c"></span>各付各半
+      </button>
+    </div>
+
+    <button class="add-btn" onclick="addEntry()">
+      <i class="ti ti-plus"></i> 加入記帳
+    </button>
+  </div>
+
+  <div class="summary">
+    <div class="sum-card"><div class="slabel">總花費 CNY</div><div class="sval" id="s-total">¥0</div></div>
+    <div class="sum-card"><div class="slabel">我付合計</div><div class="sval blue" id="s-me">¥0</div></div>
+    <div class="sum-card"><div class="slabel">女友付合計</div><div class="sval pink" id="s-gf">¥0</div></div>
+    <div class="sum-card"><div class="slabel">差額 CNY</div><div class="sval" id="s-diff">±0</div></div>
+  </div>
+
+  <div class="banner neutral" id="banner">新增記帳後自動顯示結算結果</div>
+
+  <div class="filters">
+    <select id="fil-day" onchange="render()">
+      <option value="">全部天數</option>
+      <option>Day 1</option><option>Day 2</option><option>Day 3</option>
+      <option>Day 4</option><option>Day 5</option><option>Day 6</option><option>Day 7</option>
+    </select>
+    <select id="fil-payer" onchange="render()">
+      <option value="">全部付款人</option>
+      <option value="me">我付</option>
+      <option value="gf">女友付</option>
+      <option value="split">各付各半</option>
+    </select>
+    <select id="fil-cat" onchange="render()">
+      <option value="">全部類別</option>
+      <option>機票</option><option>住宿</option><option>租車</option>
+      <option>景點</option><option>餐飲</option><option>購物</option><option>交通</option><option>其他</option>
+    </select>
+    <button class="export-btn" onclick="exportXLSX()"><i class="ti ti-file-spreadsheet" style="font-size:14px"></i> 匯出 Excel</button>
+  </div>
+
+  <div class="tbl-header">
+    <div>天</div><div>類別</div><div>付款</div><div>項目</div>
+    <div class="h-jpy" style="text-align:right">JPY</div>
+    <div style="text-align:right">CNY</div>
+    <div class="h-twd" style="text-align:right">TWD</div>
+    <div></div>
+  </div>
+  <div id="list"></div>
+</div>
+
+<script>
+let entries = [];
+let payer = 'me';
+let computing = false;
+
+const CAT = {
+  '機票':['#dbeafe','#1e40af'],'住宿':['#d1fae5','#065f46'],
+  '租車':['#fef3c7','#92400e'],'景點':['#ede9fe','#4c1d95'],
+  '餐飲':['#fef9c3','#713f12'],'購物':['#fce7f3','#831843'],
+  '交通':['#dcfce7','#14532d'],'其他':['#f1f5f9','#475569']
+};
+
+function r(id){ return parseFloat(document.getElementById(id).value)||0; }
+
+function calcFrom(src){
+  if(computing) return;
+  computing = true;
+  const jpy = parseFloat(document.getElementById('f-jpy').value)||0;
+  const cny = parseFloat(document.getElementById('f-cny').value)||0;
+  const twd = parseFloat(document.getElementById('f-twd').value)||0;
+  const rjc = r('r-jpy-cny'), rjt = r('r-jpy-twd'), rct = r('r-cny-twd');
+  if(src==='jpy'&&jpy){
+    document.getElementById('f-cny').value = (jpy*rjc).toFixed(2);
+    document.getElementById('f-twd').value = Math.round(jpy*rjt);
+  } else if(src==='cny'&&cny){
+    document.getElementById('f-jpy').value = rjc ? Math.round(cny/rjc) : '';
+    document.getElementById('f-twd').value = Math.round(cny*rct);
+  } else if(src==='twd'&&twd){
+    document.getElementById('f-jpy').value = rjt ? Math.round(twd/rjt) : '';
+    document.getElementById('f-cny').value = rct ? (twd/rct).toFixed(2) : '';
+  }
+  computing = false;
+}
+
+function onRateChange(){
+  const jpy = parseFloat(document.getElementById('f-jpy').value)||0;
+  if(jpy) calcFrom('jpy');
+}
+
+function setPayer(p){
+  payer = p;
+  document.querySelectorAll('.payer-btn').forEach(b=>{
+    b.classList.remove('active');
+    if((p==='me'&&b.classList.contains('me'))||
+       (p==='gf'&&b.classList.contains('gf'))||
+       (p==='split'&&b.classList.contains('split'))) b.classList.add('active');
+  });
+}
+
+function addEntry(){
+  const day  = document.getElementById('f-day').value;
+  const cat  = document.getElementById('f-cat').value;
+  const item = document.getElementById('f-item').value.trim() || cat;
+  const jpy  = parseFloat(document.getElementById('f-jpy').value)||0;
+  const cny  = parseFloat(document.getElementById('f-cny').value)||0;
+  const twd  = parseFloat(document.getElementById('f-twd').value)||0;
+  if(!jpy&&!cny&&!twd){ alert('請填入金額'); return; }
+
+  const rjc = r('r-jpy-cny'), rjt = r('r-jpy-twd'), rct = r('r-cny-twd');
+  const fCny = cny || (jpy*rjc) || (rct?(twd/rct):0);
+  const fJpy = jpy || (rjc?(cny/rjc):0) || (rjt?(twd/rjt):0);
+  const fTwd = twd || (jpy*rjt) || (cny*rct);
+
+  let mePay=0, gfPay=0;
+  if(payer==='me') mePay=fCny;
+  else if(payer==='gf') gfPay=fCny;
+  else { mePay=fCny/2; gfPay=fCny/2; }
+
+  entries.push({id:Date.now(), day, cat, item, jpy:fJpy, cny:fCny, twd:fTwd, payer, mePay, gfPay});
+  ['f-jpy','f-cny','f-twd','f-item'].forEach(id=>document.getElementById(id).value='');
+  save(); render();
+}
+
+function deleteEntry(id){
+  entries = entries.filter(e=>e.id!==id);
+  save(); render();
+}
+
+function save(){
+  try{ localStorage.setItem('okinawa_entries', JSON.stringify(entries)); }catch(e){}
+}
+
+function load(){
+  try{
+    const d = localStorage.getItem('okinawa_entries');
+    if(d) entries = JSON.parse(d);
+  }catch(e){}
+}
+
+function render(){
+  const fd = document.getElementById('fil-day').value;
+  const fp = document.getElementById('fil-payer').value;
+  const fc = document.getElementById('fil-cat').value;
+  const filtered = entries.filter(e=>
+    (!fd||e.day===fd)&&(!fp||e.payer===fp)&&(!fc||e.cat===fc)
+  );
+
+  const tot  = entries.reduce((a,e)=>a+e.cny, 0);
+  const me   = entries.reduce((a,e)=>a+e.mePay, 0);
+  const gf   = entries.reduce((a,e)=>a+e.gfPay, 0);
+  const diff = me - gf;
+
+  document.getElementById('s-total').textContent = '¥'+tot.toFixed(2);
+  document.getElementById('s-me').textContent    = '¥'+me.toFixed(2);
+  document.getElementById('s-gf').textContent    = '¥'+gf.toFixed(2);
+  const dEl = document.getElementById('s-diff');
+  dEl.textContent = (diff>=0?'+':'')+diff.toFixed(2);
+  dEl.className = 'sval ' + (Math.abs(diff)<0.01 ? '' : diff>0 ? 'green' : 'red');
+
+  const bn = document.getElementById('banner');
+  if(!entries.length){ bn.className='banner neutral'; bn.textContent='新增記帳後自動顯示結算結果'; }
+  else if(Math.abs(diff)<0.01){ bn.className='banner even'; bn.textContent='兩人平手！不用找錢 '; }
+  else if(diff>0){ bn.className='banner gf-owes'; bn.textContent='女友需還你 ¥'+diff.toFixed(2)+' CNY'; }
+  else { bn.className='banner me-owes'; bn.textContent='你需還女友 ¥'+(-diff).toFixed(2)+' CNY'; }
+
+  const PL = {me:'我付',gf:'女友',split:'各半'};
+  const PC = {me:'#3b82f6',gf:'#ec4899',split:'#22c55e'};
+
+  const list = document.getElementById('list');
+  if(!filtered.length){
+    list.innerHTML='<div class="empty"><i class="ti ti-receipt"></i>還沒有記帳紀錄</div>';
+    return;
+  }
+
+  list.innerHTML = [...filtered].sort((a,b)=>a.day.localeCompare(b.day)).map(e=>{
+    const [bg,tc] = CAT[e.cat]||CAT['其他'];
+    const split = e.payer==='split'?'各¥'+e.mePay.toFixed(2):(e.payer==='me'?'我¥'+e.mePay.toFixed(2):'她¥'+e.gfPay.toFixed(2));
+    return `<div class="entry">
+      <div class="day-pill">${e.day.replace('Day ','D')}</div>
+      <div><span class="cat-pill" style="background:${bg};color:${tc}">${e.cat}</span></div>
+      <div class="payer-info"><span class="dot" style="background:${PC[e.payer]}"></span>${PL[e.payer]}</div>
+      <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333">${e.item}</div>
+      <div class="num e-jpy">¥${Math.round(e.jpy).toLocaleString()}</div>
+      <div class="num" style="color:#333;font-weight:500">¥${e.cny.toFixed(2)}</div>
+      <div class="num e-twd">NT${Math.round(e.twd).toLocaleString()}</div>
+      <button class="del" onclick="deleteEntry(${e.id})" aria-label="刪除"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+
+
+function exportXLSX(){
+  if(!entries.length){ alert('還沒有記帳紀錄！'); return; }
+  const PL = {me:'我付',gf:'女友付',split:'各付各半'};
+  const rows = entries
+    .sort((a,b)=>a.day.localeCompare(b.day))
+    .map(e=>({
+      '天數': e.day,
+      '類別': e.cat,
+      '項目': e.item,
+      '付款人': PL[e.payer],
+      '日幣 JPY': Math.round(e.jpy),
+      '人民幣 CNY': parseFloat(e.cny.toFixed(2)),
+      '台幣 TWD': Math.round(e.twd),
+      '我付 CNY': parseFloat(e.mePay.toFixed(2)),
+      '女友付 CNY': parseFloat(e.gfPay.toFixed(2)),
+      '差額 CNY (我-她)': parseFloat((e.mePay-e.gfPay).toFixed(2))
+    }));
+
+  const tot = entries.reduce((a,e)=>a+e.cny,0);
+  const me  = entries.reduce((a,e)=>a+e.mePay,0);
+  const gf  = entries.reduce((a,e)=>a+e.gfPay,0);
+  const diff = me-gf;
+  const settle = Math.abs(diff)<0.01 ? '兩人平手' : diff>0 ? '女友需還你 ¥'+diff.toFixed(2)+' CNY' : '你需還女友 ¥'+(-diff).toFixed(2)+' CNY';
+
+  rows.push({});
+  rows.push({'天數':'合計','人民幣 CNY':parseFloat(tot.toFixed(2)),'我付 CNY':parseFloat(me.toFixed(2)),'女友付 CNY':parseFloat(gf.toFixed(2)),'差額 CNY (我-她)':parseFloat(diff.toFixed(2))});
+  rows.push({'天數':'結算','類別':settle});
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [8,8,20,10,12,14,12,12,14,16].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '沖繩記帳本');
+
+  const rjc = r('r-jpy-cny'), rjt = r('r-jpy-twd'), rct = r('r-cny-twd');
+  const rateRows = [
+    {'匯率設定':'1 JPY = '+rjc+' CNY'},
+    {'匯率設定':'1 JPY = '+rjt+' TWD'},
+    {'匯率設定':'1 CNY = '+rct+' TWD'},
+  ];
+  const ws2 = XLSX.utils.json_to_sheet(rateRows);
+  XLSX.utils.book_append_sheet(wb, ws2, '匯率設定');
+
+  const date = new Date();
+  const fname = '沖繩記帳本_'+date.getFullYear()+(date.getMonth()+1).toString().padStart(2,'0')+date.getDate().toString().padStart(2,'0')+'.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+// Wire up currency input listeners
+['f-jpy','f-cny','f-twd'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    var src = id.replace('f-','');
+    calcFrom(src);
+  });
+});
+
+load(); render();
+</script>
+</body>
+</html>
