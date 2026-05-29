@@ -52,16 +52,25 @@
   .amt-box.cny input:focus{border-color:#ef4444}
   .amt-box.twd input:focus{border-color:#10b981}
 
-  /* Payer buttons */
-  .payer-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+  /* Payer buttons — 2×2 grid */
+  .payer-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
   .payer-btn{padding:9px 8px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fafafa;font-size:13px;cursor:pointer;color:#888;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
   .payer-btn .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
   .payer-btn.me.active{background:#eff6ff;border-color:#3b82f6;color:#1d4ed8;font-weight:500}
   .payer-btn.gf.active{background:#fdf2f8;border-color:#ec4899;color:#9d174d;font-weight:500}
   .payer-btn.split.active{background:#f0fdf4;border-color:#22c55e;color:#15803d;font-weight:500}
+  .payer-btn.custom.active{background:#f5f3ff;border-color:#8b5cf6;color:#5b21b6;font-weight:500}
   .payer-btn .dot.me-c{background:#3b82f6}
   .payer-btn .dot.gf-c{background:#ec4899}
   .payer-btn .dot.sp-c{background:#22c55e}
+  .payer-btn .dot.cs-c{background:#8b5cf6}
+
+  /* Custom split box */
+  .custom-split-box{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:12px;margin-bottom:14px}
+  .custom-split-box .form-section{color:#7c3aed;margin-bottom:8px}
+  .cs-who-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .cs-amt-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cs-hint{font-size:11px;color:#7c3aed;margin-top:6px;opacity:0.8}
 
   /* Add button */
   .add-btn{width:100%;padding:10px;background:#1a1a1a;border:none;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:opacity 0.15s}
@@ -188,7 +197,6 @@
   <h1>沖繩旅遊記帳本 ✈</h1>
   <p class="subtitle">填任一金額自動換算 · 記錄誰付款 · 自動結算</p>
 
-  <!-- 設定提示（Firebase 設定完成後可移除） -->
   <div class="config-notice" id="config-notice" style="display:none">
     ⚠️ <strong>尚未設定 Firebase</strong> — 請在程式碼頂端的 <code>firebaseConfig</code> 填入你的專案資訊，資料才能跨裝置同步。
   </div>
@@ -255,17 +263,45 @@
       </div>
     </div>
 
-    <div class="form-section">付款人</div>
+    <div class="form-section">付款方式</div>
     <div class="payer-row">
       <button class="payer-btn me active" onclick="setPayer('me')">
-        <span class="dot me-c"></span>JJ付
+        <span class="dot me-c"></span>JJ付（VV全欠）
       </button>
       <button class="payer-btn gf" onclick="setPayer('gf')">
-        <span class="dot gf-c"></span>VV付
+        <span class="dot gf-c"></span>VV付（JJ全欠）
       </button>
       <button class="payer-btn split" onclick="setPayer('split')">
         <span class="dot sp-c"></span>各付各半
       </button>
+      <button class="payer-btn custom" onclick="setPayer('custom')">
+        <span class="dot cs-c"></span>自訂分攤
+      </button>
+    </div>
+
+    <!-- 自訂分攤展開區塊 -->
+    <div class="custom-split-box" id="custom-split-box" style="display:none">
+      <div class="form-section">誰付的款？</div>
+      <div class="cs-who-row">
+        <button class="payer-btn me active" id="cs-who-me" onclick="setCustomWho('me')">
+          <span class="dot me-c"></span>JJ付款
+        </button>
+        <button class="payer-btn gf" id="cs-who-gf" onclick="setCustomWho('gf')">
+          <span class="dot gf-c"></span>VV付款
+        </button>
+      </div>
+      <div class="form-section">各自份額 CNY（相加應等於總金額）</div>
+      <div class="cs-amt-row">
+        <div class="field">
+          <label>JJ 的份額</label>
+          <input type="number" id="cs-jj" placeholder="0" min="0" oninput="onCustomSplitChange('jj')">
+        </div>
+        <div class="field">
+          <label>VV 的份額</label>
+          <input type="number" id="cs-vv" placeholder="0" min="0" oninput="onCustomSplitChange('vv')">
+        </div>
+      </div>
+      <div class="cs-hint" id="cs-hint"></div>
     </div>
 
     <button class="add-btn" id="add-btn" onclick="addEntry()">
@@ -289,10 +325,11 @@
       <option>Day 4</option><option>Day 5</option><option>Day 6</option><option>Day 7</option>
     </select>
     <select id="fil-payer" onchange="render()">
-      <option value="">全部付款人</option>
+      <option value="">全部付款方式</option>
       <option value="me">JJ付</option>
       <option value="gf">VV付</option>
       <option value="split">各付各半</option>
+      <option value="custom">自訂分攤</option>
     </select>
     <select id="fil-cat" onchange="render()">
       <option value="">全部類別</option>
@@ -354,17 +391,44 @@
         <input type="number" id="e-twd" placeholder="0" min="0">
       </div>
     </div>
-    <div class="form-section" style="margin-bottom:8px">付款人</div>
-    <div class="payer-row" style="margin-bottom:4px">
+    <div class="form-section" style="margin-bottom:8px">付款方式</div>
+    <div class="payer-row" style="margin-bottom:8px">
       <button class="payer-btn me" id="ep-me" onclick="setEditPayer('me')">
-        <span class="dot me-c"></span>JJ付
+        <span class="dot me-c"></span>JJ付（VV全欠）
       </button>
       <button class="payer-btn gf" id="ep-gf" onclick="setEditPayer('gf')">
-        <span class="dot gf-c"></span>VV付
+        <span class="dot gf-c"></span>VV付（JJ全欠）
       </button>
       <button class="payer-btn split" id="ep-split" onclick="setEditPayer('split')">
         <span class="dot sp-c"></span>各付各半
       </button>
+      <button class="payer-btn custom" id="ep-custom" onclick="setEditPayer('custom')">
+        <span class="dot cs-c"></span>自訂分攤
+      </button>
+    </div>
+    <!-- 編輯 modal 的自訂分攤 -->
+    <div class="custom-split-box" id="edit-custom-split-box" style="display:none;margin-bottom:4px">
+      <div class="form-section">誰付的款？</div>
+      <div class="cs-who-row">
+        <button class="payer-btn me active" id="ecs-who-me" onclick="setEditCustomWho('me')">
+          <span class="dot me-c"></span>JJ付款
+        </button>
+        <button class="payer-btn gf" id="ecs-who-gf" onclick="setEditCustomWho('gf')">
+          <span class="dot gf-c"></span>VV付款
+        </button>
+      </div>
+      <div class="form-section">各自份額 CNY</div>
+      <div class="cs-amt-row">
+        <div class="field">
+          <label>JJ 的份額</label>
+          <input type="number" id="ecs-jj" placeholder="0" min="0" oninput="onEditCustomSplitChange('jj')">
+        </div>
+        <div class="field">
+          <label>VV 的份額</label>
+          <input type="number" id="ecs-vv" placeholder="0" min="0" oninput="onEditCustomSplitChange('vv')">
+        </div>
+      </div>
+      <div class="cs-hint" id="ecs-hint"></div>
     </div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeEditModal()">取消</button>
@@ -376,7 +440,6 @@
 <script>
 // ============================================================
 // ★ 請在這裡填入你的 Firebase 設定 ★
-// 從 Firebase 主控台 → 專案設定 → 你的應用程式 → 複製貼上
 // ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyAKxyZ66VbRU4pPhY0GkeYZzr7i1gD8PYE",
@@ -391,6 +454,7 @@ const firebaseConfig = {
 
 let entries = [];
 let payer = 'me';
+let customWho = 'me';
 let computing = false;
 let entriesRef = null;
 let isConnected = false;
@@ -428,7 +492,6 @@ function initFirebase() {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     entriesRef = db.collection('trips').doc('okinawa2025').collection('entries');
-
     setSyncStatus('syncing');
     entriesRef.orderBy('timestamp').onSnapshot(
       snapshot => {
@@ -479,12 +542,61 @@ function onRateChange(){
 
 function setPayer(p){
   payer = p;
-  document.querySelectorAll('.payer-btn').forEach(b=>{
-    b.classList.remove('active');
-    if((p==='me'&&b.classList.contains('me'))||
-       (p==='gf'&&b.classList.contains('gf'))||
-       (p==='split'&&b.classList.contains('split'))) b.classList.add('active');
+  document.querySelectorAll('.payer-row .payer-btn').forEach(b => b.classList.remove('active'));
+  const map = {me:'me',gf:'gf',split:'split',custom:'custom'};
+  document.querySelectorAll('.payer-row .payer-btn').forEach(b => {
+    for(const [k,cls] of Object.entries(map)){
+      if(p===k && b.classList.contains(cls)) b.classList.add('active');
+    }
   });
+
+  const box = document.getElementById('custom-split-box');
+  if(p === 'custom'){
+    box.style.display = 'block';
+    // 預設 50/50
+    const totalCny = parseFloat(document.getElementById('f-cny').value) || 0;
+    document.getElementById('cs-jj').value = (totalCny/2).toFixed(2);
+    document.getElementById('cs-vv').value = (totalCny/2).toFixed(2);
+    updateCustomHint('cs');
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function setCustomWho(who){
+  customWho = who;
+  document.getElementById('cs-who-me').classList.toggle('active', who === 'me');
+  document.getElementById('cs-who-gf').classList.toggle('active', who === 'gf');
+}
+
+function onCustomSplitChange(which){
+  const totalCny = parseFloat(document.getElementById('f-cny').value) || 0;
+  if(which === 'jj'){
+    const jj = parseFloat(document.getElementById('cs-jj').value) || 0;
+    document.getElementById('cs-vv').value = Math.max(0, totalCny - jj).toFixed(2);
+  } else {
+    const vv = parseFloat(document.getElementById('cs-vv').value) || 0;
+    document.getElementById('cs-jj').value = Math.max(0, totalCny - vv).toFixed(2);
+  }
+  updateCustomHint('cs');
+}
+
+function updateCustomHint(prefix){
+  const totalCny = parseFloat(document.getElementById('f-cny').value) || 0;
+  const jj = parseFloat(document.getElementById(prefix+'-jj').value) || 0;
+  const vv = parseFloat(document.getElementById(prefix+'-vv').value) || 0;
+  const hint = document.getElementById(prefix === 'cs' ? 'cs-hint' : 'ecs-hint');
+  if(!hint) return;
+  const sum = jj + vv;
+  if(totalCny > 0 && Math.abs(sum - totalCny) > 0.02){
+    hint.textContent = `⚠ 份額合計 ¥${sum.toFixed(2)}，與總金額 ¥${totalCny.toFixed(2)} 不符`;
+    hint.style.color = '#b91c1c';
+  } else if(totalCny > 0){
+    hint.textContent = `✓ 份額合計正確`;
+    hint.style.color = '#15803d';
+  } else {
+    hint.textContent = '';
+  }
 }
 
 async function addEntry(){
@@ -501,12 +613,25 @@ async function addEntry(){
   const fJpy = jpy || (rjc?(cny/rjc):0) || (rjt?(twd/rjt):0);
   const fTwd = twd || (jpy*rjt) || (cny*rct);
 
-  let mePay=0, gfPay=0;
-  if(payer==='me') mePay=fCny;
-  else if(payer==='gf') gfPay=fCny;
-  else { mePay=fCny/2; gfPay=fCny/2; }
+  let mePay=0, gfPay=0, jjPortion=0, vvPortion=0, payerWho='';
+  if(payer==='me'){ mePay=fCny; }
+  else if(payer==='gf'){ gfPay=fCny; }
+  else if(payer==='split'){ mePay=fCny/2; gfPay=fCny/2; }
+  else { // custom
+    jjPortion = parseFloat(document.getElementById('cs-jj').value)||0;
+    vvPortion = parseFloat(document.getElementById('cs-vv').value)||0;
+    payerWho = customWho;
+    if(customWho === 'me'){
+      mePay = vvPortion;  // JJ付款，VV欠JJ她自己的份
+      gfPay = 0;
+    } else {
+      mePay = 0;
+      gfPay = jjPortion;  // VV付款，JJ欠VV他自己的份
+    }
+  }
 
   const entry = { day, cat, item, jpy:fJpy, cny:fCny, twd:fTwd, payer, mePay, gfPay };
+  if(payer==='custom'){ entry.jjPortion=jjPortion; entry.vvPortion=vvPortion; entry.payerWho=payerWho; }
 
   if(entriesRef && isConnected) {
     const btn = document.getElementById('add-btn');
@@ -526,10 +651,13 @@ async function addEntry(){
   }
 
   ['f-jpy','f-cny','f-twd','f-item'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cs-hint').textContent = '';
 }
 
+// ---- Edit modal ----
 let editingId = null;
 let editPayer = 'me';
+let editCustomWho = 'me';
 
 function openEditModal(id) {
   const e = entries.find(e => String(e.id) === String(id));
@@ -542,6 +670,12 @@ function openEditModal(id) {
   document.getElementById('e-cny').value = e.cny ? e.cny.toFixed(2) : '';
   document.getElementById('e-twd').value = e.twd ? Math.round(e.twd) : '';
   setEditPayer(e.payer);
+  if(e.payer === 'custom'){
+    setEditCustomWho(e.payerWho || 'me');
+    document.getElementById('ecs-jj').value = e.jjPortion != null ? e.jjPortion.toFixed(2) : '';
+    document.getElementById('ecs-vv').value = e.vvPortion != null ? e.vvPortion.toFixed(2) : '';
+    updateEditCustomHint();
+  }
   document.getElementById('edit-modal').classList.add('open');
 }
 
@@ -552,10 +686,47 @@ function closeEditModal() {
 
 function setEditPayer(p) {
   editPayer = p;
-  ['me','gf','split'].forEach(k => {
+  ['me','gf','split','custom'].forEach(k => {
     const btn = document.getElementById('ep-' + k);
-    btn.classList.toggle('active', k === p);
+    if(btn) btn.classList.toggle('active', k === p);
   });
+  const box = document.getElementById('edit-custom-split-box');
+  box.style.display = p === 'custom' ? 'block' : 'none';
+}
+
+function setEditCustomWho(who){
+  editCustomWho = who;
+  document.getElementById('ecs-who-me').classList.toggle('active', who === 'me');
+  document.getElementById('ecs-who-gf').classList.toggle('active', who === 'gf');
+}
+
+function onEditCustomSplitChange(which){
+  const totalCny = parseFloat(document.getElementById('e-cny').value) || 0;
+  if(which === 'jj'){
+    const jj = parseFloat(document.getElementById('ecs-jj').value) || 0;
+    document.getElementById('ecs-vv').value = Math.max(0, totalCny - jj).toFixed(2);
+  } else {
+    const vv = parseFloat(document.getElementById('ecs-vv').value) || 0;
+    document.getElementById('ecs-jj').value = Math.max(0, totalCny - vv).toFixed(2);
+  }
+  updateEditCustomHint();
+}
+
+function updateEditCustomHint(){
+  const totalCny = parseFloat(document.getElementById('e-cny').value) || 0;
+  const jj = parseFloat(document.getElementById('ecs-jj').value) || 0;
+  const vv = parseFloat(document.getElementById('ecs-vv').value) || 0;
+  const hint = document.getElementById('ecs-hint');
+  const sum = jj + vv;
+  if(totalCny > 0 && Math.abs(sum - totalCny) > 0.02){
+    hint.textContent = `⚠ 份額合計 ¥${sum.toFixed(2)}，與總金額 ¥${totalCny.toFixed(2)} 不符`;
+    hint.style.color = '#b91c1c';
+  } else if(totalCny > 0){
+    hint.textContent = `✓ 份額合計正確`;
+    hint.style.color = '#15803d';
+  } else {
+    hint.textContent = '';
+  }
 }
 
 async function saveEdit() {
@@ -572,12 +743,20 @@ async function saveEdit() {
   const fJpy = jpy || (rjc ? (cny / rjc) : 0) || (rjt ? (twd / rjt) : 0);
   const fTwd = twd || (jpy * rjt) || (cny * rct);
 
-  let mePay = 0, gfPay = 0;
-  if (editPayer === 'me') mePay = fCny;
-  else if (editPayer === 'gf') gfPay = fCny;
-  else { mePay = fCny / 2; gfPay = fCny / 2; }
+  let mePay=0, gfPay=0, jjPortion=0, vvPortion=0, payerWho='';
+  if(editPayer==='me'){ mePay=fCny; }
+  else if(editPayer==='gf'){ gfPay=fCny; }
+  else if(editPayer==='split'){ mePay=fCny/2; gfPay=fCny/2; }
+  else {
+    jjPortion = parseFloat(document.getElementById('ecs-jj').value) || 0;
+    vvPortion = parseFloat(document.getElementById('ecs-vv').value) || 0;
+    payerWho = editCustomWho;
+    if(editCustomWho === 'me'){ mePay = vvPortion; gfPay = 0; }
+    else { mePay = 0; gfPay = jjPortion; }
+  }
 
-  const updated = { day, cat, item, jpy: fJpy, cny: fCny, twd: fTwd, payer: editPayer, mePay, gfPay };
+  const updated = { day, cat, item, jpy:fJpy, cny:fCny, twd:fTwd, payer:editPayer, mePay, gfPay };
+  if(editPayer==='custom'){ updated.jjPortion=jjPortion; updated.vvPortion=vvPortion; updated.payerWho=payerWho; }
 
   if (entriesRef && isConnected) {
     try {
@@ -620,6 +799,21 @@ function loadLocal(){
   }catch(e){}
 }
 
+function getEntryPayerLabel(e){
+  if(e.payer === 'custom'){
+    const who = e.payerWho === 'me' ? 'JJ' : 'VV';
+    const jj = e.jjPortion != null ? e.jjPortion.toFixed(0) : '?';
+    const vv = e.vvPortion != null ? e.vvPortion.toFixed(0) : '?';
+    return `${who}代 ${jj}/${vv}`;
+  }
+  return {me:'JJ',gf:'VV',split:'各半'}[e.payer] || e.payer;
+}
+
+function getEntryPayerColor(e){
+  if(e.payer === 'custom') return e.payerWho === 'me' ? '#3b82f6' : '#ec4899';
+  return {me:'#3b82f6',gf:'#ec4899',split:'#22c55e'}[e.payer] || '#aaa';
+}
+
 function render(){
   const fd = document.getElementById('fil-day').value;
   const fp = document.getElementById('fil-payer').value;
@@ -646,9 +840,6 @@ function render(){
   else if(diff>0){ bn.className='banner gf-owes'; bn.textContent='VV還需給JJ ¥'+diff.toFixed(2)+' CNY'; }
   else { bn.className='banner me-owes'; bn.textContent='JJ還需給VV ¥'+(-diff).toFixed(2)+' CNY'; }
 
-  const PL = {me:'JJ',gf:'VV',split:'各半'};
-  const PC = {me:'#3b82f6',gf:'#ec4899',split:'#22c55e'};
-
   const list = document.getElementById('list');
   if(!filtered.length){
     list.innerHTML='<div class="empty"><i class="ti ti-receipt"></i>還沒有記帳紀錄</div>';
@@ -657,10 +848,12 @@ function render(){
 
   list.innerHTML = [...filtered].sort((a,b)=>a.day.localeCompare(b.day)).map(e=>{
     const [bg,tc] = CAT[e.cat]||CAT['其他'];
+    const label = getEntryPayerLabel(e);
+    const color = getEntryPayerColor(e);
     return `<div class="entry">
       <div class="day-pill">${e.day.replace('Day ','D')}</div>
       <div class="entry-cat"><span class="cat-pill" style="background:${bg};color:${tc}">${e.cat}</span></div>
-      <div class="payer-info"><span class="dot" style="background:${PC[e.payer]}"></span>${PL[e.payer]}</div>
+      <div class="payer-info"><span class="dot" style="background:${color}"></span>${label}</div>
       <div class="e-item" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333">${e.item}</div>
       <div class="num e-jpy">¥${Math.round(e.jpy).toLocaleString()}</div>
       <div class="num e-cny" style="color:#333;font-weight:500">¥${e.cny.toFixed(2)}</div>
@@ -675,19 +868,21 @@ function render(){
 
 function exportXLSX(){
   if(!entries.length){ alert('還沒有記帳紀錄！'); return; }
-  const PL = {me:'JJ付',gf:'VV付',split:'各付各半'};
+  const PL = {me:'JJ付',gf:'VV付',split:'各付各半',custom:'自訂分攤'};
   const rows = entries
     .sort((a,b)=>a.day.localeCompare(b.day))
     .map(e=>({
       '天數': e.day,
       '類別': e.cat,
       '項目': e.item,
-      '付款人': PL[e.payer],
+      '付款方式': e.payer==='custom'
+        ? `自訂(${e.payerWho==='me'?'JJ':'VV'}付款,JJ份${(e.jjPortion||0).toFixed(2)}/VV份${(e.vvPortion||0).toFixed(2)})`
+        : PL[e.payer],
       '日幣 JPY': Math.round(e.jpy),
       '人民幣 CNY': parseFloat(e.cny.toFixed(2)),
       '台幣 TWD': Math.round(e.twd),
-      'JJ付 CNY': parseFloat(e.mePay.toFixed(2)),
-      'VV付 CNY': parseFloat(e.gfPay.toFixed(2)),
+      'JJ應付 CNY': parseFloat(e.mePay.toFixed(2)),
+      'VV應付 CNY': parseFloat(e.gfPay.toFixed(2)),
       '差額 CNY (JJ-VV)': parseFloat((e.mePay-e.gfPay).toFixed(2))
     }));
 
@@ -698,21 +893,20 @@ function exportXLSX(){
   const settle = Math.abs(diff)<0.01 ? '兩人平手' : diff>0 ? 'VV還需給JJ ¥'+diff.toFixed(2)+' CNY' : 'JJ還需給VV ¥'+(-diff).toFixed(2)+' CNY';
 
   rows.push({});
-  rows.push({'天數':'合計','人民幣 CNY':parseFloat(tot.toFixed(2)),'JJ付 CNY':parseFloat(me.toFixed(2)),'VV付 CNY':parseFloat(gf.toFixed(2)),'差額 CNY (JJ-VV)':parseFloat(diff.toFixed(2))});
+  rows.push({'天數':'合計','人民幣 CNY':parseFloat(tot.toFixed(2)),'JJ應付 CNY':parseFloat(me.toFixed(2)),'VV應付 CNY':parseFloat(gf.toFixed(2)),'差額 CNY (JJ-VV)':parseFloat(diff.toFixed(2))});
   rows.push({'天數':'結算','類別':settle});
 
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [8,8,20,10,12,14,12,12,14,16].map(w=>({wch:w}));
+  ws['!cols'] = [8,8,20,20,12,14,12,12,14,16].map(w=>({wch:w}));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '沖繩記帳本');
 
   const rjc = r('r-jpy-cny'), rjt = r('r-jpy-twd'), rct = r('r-cny-twd');
-  const rateRows = [
+  const ws2 = XLSX.utils.json_to_sheet([
     {'匯率設定':'1 JPY = '+rjc+' CNY'},
     {'匯率設定':'1 JPY = '+rjt+' TWD'},
     {'匯率設定':'1 CNY = '+rct+' TWD'},
-  ];
-  const ws2 = XLSX.utils.json_to_sheet(rateRows);
+  ]);
   XLSX.utils.book_append_sheet(wb, ws2, '匯率設定');
 
   const date = new Date();
@@ -720,11 +914,9 @@ function exportXLSX(){
   XLSX.writeFile(wb, fname);
 }
 
-// Wire up currency input listeners
 ['f-jpy','f-cny','f-twd'].forEach(function(id){
   document.getElementById(id).addEventListener('input', function(){
-    var src = id.replace('f-','');
-    calcFrom(src);
+    calcFrom(id.replace('f-',''));
   });
 });
 
