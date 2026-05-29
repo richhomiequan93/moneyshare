@@ -571,12 +571,14 @@ function setCustomWho(who){
 
 function onCustomSplitChange(which){
   const totalCny = parseFloat(document.getElementById('f-cny').value) || 0;
-  if(which === 'jj'){
-    const jj = parseFloat(document.getElementById('cs-jj').value) || 0;
-    document.getElementById('cs-vv').value = Math.max(0, totalCny - jj).toFixed(2);
-  } else {
-    const vv = parseFloat(document.getElementById('cs-vv').value) || 0;
-    document.getElementById('cs-jj').value = Math.max(0, totalCny - vv).toFixed(2);
+  if(totalCny > 0){
+    if(which === 'jj'){
+      const jj = parseFloat(document.getElementById('cs-jj').value) || 0;
+      document.getElementById('cs-vv').value = Math.max(0, totalCny - jj).toFixed(2);
+    } else {
+      const vv = parseFloat(document.getElementById('cs-vv').value) || 0;
+      document.getElementById('cs-jj').value = Math.max(0, totalCny - vv).toFixed(2);
+    }
   }
   updateCustomHint('cs');
 }
@@ -702,12 +704,14 @@ function setEditCustomWho(who){
 
 function onEditCustomSplitChange(which){
   const totalCny = parseFloat(document.getElementById('e-cny').value) || 0;
-  if(which === 'jj'){
-    const jj = parseFloat(document.getElementById('ecs-jj').value) || 0;
-    document.getElementById('ecs-vv').value = Math.max(0, totalCny - jj).toFixed(2);
-  } else {
-    const vv = parseFloat(document.getElementById('ecs-vv').value) || 0;
-    document.getElementById('ecs-jj').value = Math.max(0, totalCny - vv).toFixed(2);
+  if(totalCny > 0){
+    if(which === 'jj'){
+      const jj = parseFloat(document.getElementById('ecs-jj').value) || 0;
+      document.getElementById('ecs-vv').value = Math.max(0, totalCny - jj).toFixed(2);
+    } else {
+      const vv = parseFloat(document.getElementById('ecs-vv').value) || 0;
+      document.getElementById('ecs-jj').value = Math.max(0, totalCny - vv).toFixed(2);
+    }
   }
   updateEditCustomHint();
 }
