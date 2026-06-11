@@ -705,19 +705,19 @@ function exportXLSX(){
       '日幣 JPY': Math.round(e.jpy),
       '人民幣 CNY': parseFloat(e.cny.toFixed(2)),
       '台幣 TWD': Math.round(e.twd),
-      'JJ應付 CNY': parseFloat(e.mePay.toFixed(2)),
-      'VV應付 CNY': parseFloat(e.gfPay.toFixed(2)),
-      '差額 CNY (JJ-VV)': parseFloat((e.mePay-e.gfPay).toFixed(2))
+      'JJ實付 CNY': parseFloat(e.mePay.toFixed(2)),
+      'VV實付 CNY': parseFloat(e.gfPay.toFixed(2)),
+      '本筆結算 CNY (+VV欠JJ/-JJ欠VV)': parseFloat((e.mePay - e.cny/2).toFixed(2))
     }));
 
-  const tot = entries.reduce((a,e)=>a+e.cny,0);
-  const me  = entries.reduce((a,e)=>a+e.mePay,0);
-  const gf  = entries.reduce((a,e)=>a+e.gfPay,0);
-  const diff = me-gf;
+  const tot  = entries.reduce((a,e)=>a+e.cny,0);
+  const me   = entries.reduce((a,e)=>a+e.mePay,0);
+  const gf   = entries.reduce((a,e)=>a+e.gfPay,0);
+  const diff = me - tot/2;
   const settle = Math.abs(diff)<0.01 ? '兩人平手' : diff>0 ? 'VV還需給JJ ¥'+diff.toFixed(2)+' CNY' : 'JJ還需給VV ¥'+(-diff).toFixed(2)+' CNY';
 
   rows.push({});
-  rows.push({'天數':'合計','人民幣 CNY':parseFloat(tot.toFixed(2)),'JJ應付 CNY':parseFloat(me.toFixed(2)),'VV應付 CNY':parseFloat(gf.toFixed(2)),'差額 CNY (JJ-VV)':parseFloat(diff.toFixed(2))});
+  rows.push({'天數':'合計','人民幣 CNY':parseFloat(tot.toFixed(2)),'JJ實付 CNY':parseFloat(me.toFixed(2)),'VV實付 CNY':parseFloat(gf.toFixed(2)),'本筆結算 CNY (+VV欠JJ/-JJ欠VV)':parseFloat(diff.toFixed(2))});
   rows.push({'天數':'結算','類別':settle});
 
   const ws = XLSX.utils.json_to_sheet(rows);
