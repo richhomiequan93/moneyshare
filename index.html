@@ -474,6 +474,26 @@ function onRateChange(){
   if(jpy) calcFrom('jpy');
 }
 
+function calcEditFrom(src){
+  if(computing) return;
+  computing = true;
+  const jpy = parseFloat(document.getElementById('e-jpy').value)||0;
+  const cny = parseFloat(document.getElementById('e-cny').value)||0;
+  const twd = parseFloat(document.getElementById('e-twd').value)||0;
+  const rjc = r('r-jpy-cny'), rjt = r('r-jpy-twd'), rct = r('r-cny-twd');
+  if(src==='jpy'&&jpy){
+    document.getElementById('e-cny').value = (jpy*rjc).toFixed(2);
+    document.getElementById('e-twd').value = Math.round(jpy*rjt);
+  } else if(src==='cny'&&cny){
+    document.getElementById('e-jpy').value = rjc ? Math.round(cny/rjc) : '';
+    document.getElementById('e-twd').value = Math.round(cny*rct);
+  } else if(src==='twd'&&twd){
+    document.getElementById('e-jpy').value = rjt ? Math.round(twd/rjt) : '';
+    document.getElementById('e-cny').value = rct ? (twd/rct).toFixed(2) : '';
+  }
+  computing = false;
+}
+
 function setPayer(p){
   payer = p;
   document.querySelectorAll('.payer-row .payer-btn').forEach(b=>{
@@ -630,10 +650,10 @@ function render(){
     (!fd||e.day===fd)&&(!fp||e.payer===fp)&&(!fc||e.cat===fc)
   );
 
-  const tot  = entries.reduce((a,e)=>a+e.cny, 0);
-  const me   = entries.reduce((a,e)=>a+e.mePay, 0);
-  const gf   = entries.reduce((a,e)=>a+e.gfPay, 0);
-  const diff = me - gf;
+  const tot    = entries.reduce((a,e)=>a+e.cny, 0);
+  const me     = entries.reduce((a,e)=>a+e.mePay, 0);
+  const gf     = entries.reduce((a,e)=>a+e.gfPay, 0);
+  const diff   = me - tot / 2; // JJ實付 - 應付一半 = 正數代表VV欠JJ，負數代表JJ欠VV
 
   document.getElementById('s-total').textContent = '¥'+tot.toFixed(2);
   document.getElementById('s-me').textContent    = '¥'+me.toFixed(2);
@@ -721,6 +741,12 @@ function exportXLSX(){
 ['f-jpy','f-cny','f-twd'].forEach(function(id){
   document.getElementById(id).addEventListener('input', function(){
     calcFrom(id.replace('f-',''));
+  });
+});
+
+['e-jpy','e-cny','e-twd'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    calcEditFrom(id.replace('e-',''));
   });
 });
 
